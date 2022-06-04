@@ -16,7 +16,7 @@ from packaging.utils import parse_sdist_filename, parse_wheel_filename
 SERVER_HOST = os.environ.get("SIMPLE_PYPI_HOST", "127.0.0.1")
 SERVER_PORT = int(os.environ.get("SIMPLE_PYPI_PORT", 8888))
 PKG_DIR = os.environ.get("SIMPLE_PYPI_PKG_DIR")
-LOGGER = logging.getLogger('simple-pypi')
+LOGGER = logging.getLogger("simple-pypi")
 LOGGER.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
@@ -68,6 +68,7 @@ def find_packages(pkg_dir: str) -> dict:
 
 @cache
 def generate_package_page(pkg_page: str) -> str:
+    """Generate package page content."""
     pkg_metadata = PACKAGES[pkg_page]
     pkg_name = pkg_metadata[0]["name"]
     pkg_links = " ".join(
@@ -86,7 +87,7 @@ def generate_package_page(pkg_page: str) -> str:
 </html>"""
 
 
-def refresh_index(pkg_dir):
+def refresh_index(pkg_dir: str) -> None:
     """Refresh packages."""
     global PACKAGES
     PACKAGES = find_packages(pkg_dir)
@@ -95,9 +96,11 @@ def refresh_index(pkg_dir):
 refresh_index(PKG_DIR)
 
 
-def generate_index():
+def generate_index() -> str:
     """Generate index page."""
-    packages = " ".join(f'<a href="{k}">{v[0]["name"]}</a>' for k, v in PACKAGES.items())
+    packages = " ".join(
+        f'<a href="{k}">{v[0]["name"]}</a>' for k, v in PACKAGES.items()
+    )
     return f"""<!DOCTYPE html>
 <html>
   <head>
@@ -114,7 +117,7 @@ PackageContent = NewType("PackageContent", bytes)
 PackageContentType = NewType("PackageContentType", str)
 
 
-def read_package_content(pkg_link) -> Tuple[PackageContent, PackageContentType]:
+def read_package_content(pkg_link: str) -> Tuple[PackageContent, PackageContentType]:
     pkg_filename, *_ = Path(pkg_link).name.split("#")
     content_type = "application/octet-stream"
     if pkg_filename.endswith(".whl"):
