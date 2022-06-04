@@ -118,6 +118,7 @@ PackageContentType = NewType("PackageContentType", str)
 
 
 def read_package_content(pkg_link: str) -> Tuple[PackageContent, PackageContentType]:
+    """Read package content."""
     pkg_filename, *_ = Path(pkg_link).name.split("#")
     content_type = "application/octet-stream"
     if pkg_filename.endswith(".whl"):
