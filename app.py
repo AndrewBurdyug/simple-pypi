@@ -22,7 +22,10 @@ ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 LOGGER.addHandler(ch)
 
-BASE_URL = "/simple"
+BASE_HREF = "/simple"
+REBUILD_LOC = f"{BASE_HREF}/rebuild-index"
+INDEX_URL = f"http://{SERVER_HOST}:{SERVER_PORT}{BASE_HREF}"
+REBUILD_URL = f"http://{SERVER_HOST}:{SERVER_PORT}{REBUILD_LOC}"
 
 if not PKG_DIR:
     LOGGER.error("Failure: SIMPLE_PYPI_PKG_DIR must not be empty")
@@ -56,8 +59,8 @@ def find_packages(pkg_dir: str) -> dict:
     for pkg in os.listdir(PKG_DIR):
         if pkg.endswith(".whl") or pkg.endswith(".gz"):
             name, ver, sha1 = extract_package_metadata(pkg)
-            STATIC_FILES.append(f"{BASE_URL}/{pkg}")
-            data[f"{BASE_URL}/{name}"].append(
+            STATIC_FILES.append(f"{BASE_HREF}/{pkg}")
+            data[f"{BASE_HREF}/{name}"].append(
                 {"name": name, "ver": ver, "filename": pkg, "sha1": sha1}
             )
     return data
@@ -68,7 +71,7 @@ def generate_package_page(pkg_page: str) -> str:
     pkg_metadata = PACKAGES[pkg_page]
     pkg_name = pkg_metadata[0]["name"]
     pkg_links = " ".join(
-        f'<a rel="internal" href="{BASE_URL}/{x["filename"]}#sha1={x["sha1"]}">{x["filename"]}</a>'
+        f'<a rel="internal" href="{BASE_HREF}/{x["filename"]}#sha1={x["sha1"]}">{x["filename"]}</a>'
         for x in pkg_metadata
     )
     return f"""<!DOCTYPE html>
@@ -94,7 +97,7 @@ refresh_index(PKG_DIR)
 
 def generate_index():
     """Generate index page."""
-    packages = "".join(f'<a href="{k}">{v[0]["name"]}</a>' for k, v in PACKAGES.items())
+    packages = " ".join(f'<a href="{k}">{v[0]["name"]}</a>' for k, v in PACKAGES.items())
     return f"""<!DOCTYPE html>
 <html>
   <head>
@@ -128,15 +131,15 @@ class RequestHandler(SimpleHTTPRequestHandler):
         """Handle all GET requests."""
         content_type = "text/html"
         path = self.path.rstrip("/")
-        if path == BASE_URL:
+        if path == BASE_HREF:
             payload = generate_index().encode("utf8")
         elif path in PACKAGES.keys():
             payload = generate_package_page(path).encode("utf8")
         elif path in STATIC_FILES:
             payload, content_type = read_package_content(path)
-        elif path == "{BASE_URL}/refresh":
+        elif path == REBUILD_LOC:
             refresh_index(PKG_DIR)
-            payload = b"Refreshed"
+            payload = b"Index was rebuild successfully"
         else:
             payload = b"Not Found"
 
@@ -164,8 +167,8 @@ def run_http_server():
 
 if __name__ == "__main__":
     LOGGER.info(
-        "listening for incoming requests on: %s:%d",
-        SERVER_HOST,
-        SERVER_PORT,
+        f"listening for incoming requests on: {SERVER_HOST}:{SERVER_PORT}\n"
+        f"index url: {INDEX_URL}\n"
+        f"rebuild-index url: {REBUILD_URL}\n"
     )
     run_http_server()
