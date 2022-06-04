@@ -175,4 +175,8 @@ if __name__ == "__main__":
         f"index url: {INDEX_URL}\n"
         f"rebuild-index url: {REBUILD_URL}\n"
     )
-    run_http_server()
+    try:
+        run_http_server()
+    except KeyboardInterrupt:
+        LOGGER.info('\nShutting down...')
+        exit()
