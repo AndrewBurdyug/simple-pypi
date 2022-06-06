@@ -6,7 +6,7 @@ import hashlib
 import logging
 import os
 from collections import defaultdict
-from functools import cache
+from functools import cache, lru_cache
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import NewType, Tuple
@@ -66,7 +66,7 @@ def find_packages(pkg_dir: str) -> dict:
     return data
 
 
-@cache
+@lru_cache(10)
 def generate_package_page(pkg_page: str) -> str:
     """Generate package page content."""
     pkg_metadata = PACKAGES[pkg_page]
@@ -87,15 +87,7 @@ def generate_package_page(pkg_page: str) -> str:
 </html>"""
 
 
-def refresh_index(pkg_dir: str) -> None:
-    """Refresh packages."""
-    global PACKAGES
-    PACKAGES = find_packages(pkg_dir)
-
-
-refresh_index(PKG_DIR)
-
-
+@lru_cache(10)
 def generate_index() -> str:
     """Generate index page."""
     packages = " ".join(
@@ -112,6 +104,16 @@ def generate_index() -> str:
   </body>
 </html>"""
 
+
+def refresh_index(pkg_dir: str) -> None:
+    """Refresh packages."""
+    global PACKAGES
+    PACKAGES = find_packages(pkg_dir)
+    generate_index.cache_clear()
+    generate_package_page.cache_clear()
+
+
+refresh_index(PKG_DIR)
 
 PackageContent = NewType("PackageContent", bytes)
 PackageContentType = NewType("PackageContentType", str)
