@@ -58,7 +58,7 @@ Simple-pypi was created exactly for this.
 A: Pip supports extra index url, you can use it in this way:
 
 ```
-pip install --extra-index-url -U http://localhost:8888/simple api-client
+pip install --extra-index-url http://localhost:8888/simple -U api-client
 ```
 
 1. Q: How do I use extra index with pipenv?
