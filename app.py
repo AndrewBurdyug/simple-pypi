@@ -6,7 +6,7 @@ import hashlib
 import logging
 import os
 from collections import defaultdict
-from functools import cache, lru_cache
+from functools import lru_cache
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import NewType, Tuple
@@ -37,7 +37,7 @@ PackageVersion = NewType("PackageVersion", str)
 PackageSHA1 = NewType("PackageSHA1", str)
 
 
-@cache
+@lru_cache(100)
 def extract_package_metadata(
     pkg_filename: str,
 ) -> Tuple[PackageName, PackageVersion, PackageSHA1]:
@@ -108,6 +108,7 @@ def generate_index() -> str:
 def refresh_index(pkg_dir: str) -> None:
     """Refresh packages."""
     global PACKAGES
+    extract_package_metadata.cache_clear()
     PACKAGES = find_packages(pkg_dir)
     generate_index.cache_clear()
     generate_package_page.cache_clear()
